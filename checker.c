@@ -4,90 +4,73 @@
 #include <stdarg.h>
 
 #include "limits.h"
+#include "languages.h"
+#include "rangeChecker.h"
+
+enum languages_t chosenLanguage = English;//choose based on enum present in switches.h file
 
 bool highLow;//indicates high or low violation 1=high violation, 0=low violation
-char * highLowStr[] = {"low", "high"};
 
-bool isRangeHigh(float paramValue, float upperLim)
-{
-	if(paramValue > upperLim)
-	{
-		highLow = 1;
-		return 1;
-	}else return 0;
-}
+struct parameter{
+	char * name;
+	float value;
+	float lowerLimit;
+	float upperLimit;
+};
 
-bool isRangeLow(float paramValue, float lowerLim)
-{
-	if(paramValue < lowerLim)
-	{
-		highLow = 0;
-		return 1;
-	}else return 0;
-}
-
-bool isParamInRange(float paramValue, float upperLim, float lowerLim)
-{
-	if(isRangeHigh(paramValue, upperLim))
-	{
-		return 0;
-	}
-	else if(isRangeLow(paramValue, lowerLim))
-	{
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
-}
-
-void alert(char * paramName, bool isOk)
+void alert(char * paramName, bool isOk, int languageNumber)
 {
 	if(!isOk)
 	{
-		printf("%s out of range %s!\n", paramName, highLowStr[highLow]);
+		printf("%s %s %s!\n", paramName, suppotStr[languageNumber], highLowStr[languageNumber][highLow]);
 	}
 }
 
-//note maintain the parameter-names list and their limits in limits.h file
-int batteryIsOk(double parameters, ...) {//parameter list in order: temperature, soc, chargeRate, append to this list to define order consistent with limits.h file
-	bool paramOk;
-	float upperLimit, lowerLimit;
+int batteryIsOk(struct parameter paramList[3], int noParameters) {
 	int i;
-	va_list parameterList;
+	bool paramOk;
 	
-	/* initialize valist for num number of arguments */
-    va_start(parameterList, parameters);
-	
-	for(i=0 ;i < parameters; i++)
+	for(i =0; i < noParameters; i++)
 	{
-		double param = va_arg(parameterList, double);
-		//printf("parameter %f \t upper limit: %f \t lower limit: %f\n", param, upperLimits[i], lowerLimits[i]);
-		paramOk = isParamInRange(param, upperLimits[i], lowerLimits[i]);
-		alert(paramNames[i],paramOk);
+		paramOk = isParamInRange(paramList[i].value, paramList[i].upperLimit, paramList[i].lowerLimit);
+		
+		alert(paramList[i].name, paramOk, chosenLanguage);
+		
 		if(!paramOk)
 		{
-			/* clean memory reserved for valist */
-    		va_end(parameterList);
 			return 0;
 		}
 	}
 	
-	/* clean memory reserved for valist */
-    va_end(parameterList);
-
-  return 1;
+	return 1;
 }
 
 int main() {
-  assert(batteryIsOk(3, 25.0, 70.0, 0.7));//all is well
-  
-  assert(!batteryIsOk(3, 50.0, 85.0, 0.0));//temperature out of range high
-  assert(!batteryIsOk(3, -10.0, 85.0, 0.0));//temperature out of range low
-  
-  assert(!batteryIsOk(3, 25.0, 85.0, 0.0));//SOC out of range high
-  assert(!batteryIsOk(3, 25.0, 10.0, 0.0));//SOC out of range low
-  
-  assert(!batteryIsOk(3, 25.0, 70.0, 0.9));//rate of charge out of range high
+	struct parameter paramList[3] = {{"Temperature", 25.0, LOWER_LIM_TEMPERATURE, UPPER_LIM_TEMPERATURE}, {"State of Charge", 70.0, LOWER_LIM_SOC, UPPER_LIM_SOC}, {"Charge rate", 0.7, LOWER_LIM_CHARGE_RATE, UPPER_LIM_CHARGE_RATE}};
+	assert(batteryIsOk(paramList, 3));//all is well
+
+	paramList[0].value = 50.0;
+	paramList[1].value = 85.0;
+	paramList[2].value = 0.0;
+	assert(!batteryIsOk(paramList, 3));//temperature out of range high
+	
+	paramList[0].value = -10.0;
+	paramList[1].value = 85.0;
+	paramList[2].value = 0.0;
+	assert(!batteryIsOk(paramList, 3));//temperature out of range low
+
+	paramList[0].value = 25.0;
+	paramList[1].value = 85.0;
+	paramList[2].value = 0.0;  
+	assert(!batteryIsOk(paramList, 3));//SOC out of range high
+
+	paramList[0].value = 25.0;
+	paramList[1].value = 10.0;
+	paramList[2].value = 0.0;
+	assert(!batteryIsOk(paramList, 3));//SOC out of range low
+ 
+	paramList[0].value = 25.0;
+	paramList[1].value = 70.0;
+	paramList[2].value = 0.9; 
+	assert(!batteryIsOk(paramList, 3));//rate of charge out of range high
 }
