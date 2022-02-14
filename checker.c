@@ -26,7 +26,7 @@ void alert(char * paramName, bool isOk, int languageNumber)
 	}
 }
 
-int batteryIsOk(struct parameter paramList[3], int noParameters) {
+int batteryIsOk(struct parameter paramList[], int noParameters) {
 	int i;
 	bool paramOk;
 	
