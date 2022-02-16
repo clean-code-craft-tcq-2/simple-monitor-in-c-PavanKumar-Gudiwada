@@ -6,6 +6,7 @@
 #include "limits.h"
 #include "languages.h"
 #include "rangeChecker.h"
+#include "earlyWarnings.h"
 
 enum languages_t chosenLanguage = English;//choose based on enum present in switches.h file
 
@@ -28,12 +29,14 @@ void alert(char * paramName, bool isOk, int languageNumber)
 
 int batteryIsOk(struct parameter paramList[], int noParameters) {
 	int i;
-	bool paramOk;
+	bool paramOk, earlyWarningOk;
 	
 	for(i =0; i < noParameters; i++)
 	{
 		paramOk = isParamInRange(paramList[i].value, paramList[i].upperLimit, paramList[i].lowerLimit);
+		earlyWarningOk = earlyWarning(paramList[i].value, paramList[i].upperLimit, paramList[i].lowerLimit);
 		
+		alertEarlyWarning(paramList[i].name, earlyWarningOk, chosenLanguage);
 		alert(paramList[i].name, paramOk, chosenLanguage);
 		
 		if(!paramOk)
@@ -73,4 +76,8 @@ int main() {
 	paramList[1].value = 70.0;
 	paramList[2].value = 0.9; 
 	assert(!batteryIsOk(paramList, 3));//rate of charge out of range high
+	
+	assert(earlyWarning(50.0, UPPER_LIM_TEMPERATURE, LOWER_LIM_TEMPERATURE) == noEarlyWarning);
+	assert(earlyWarning(43.0, UPPER_LIM_TEMPERATURE, LOWER_LIM_TEMPERATURE) == earlyHigh);
+	assert(earlyWarning(1.0, UPPER_LIM_TEMPERATURE, LOWER_LIM_TEMPERATURE) == earlyLow);
 }
