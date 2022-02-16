@@ -23,8 +23,10 @@ enum violate earlyWarning(float paramValue, float upperLim, float lowerLim)
 	else if((paramValue > upperWarningLimit)&&(paramValue < upperLim)){
 		return 1;
 	}
+	else{
+		return 2;
+	}
 	
-	return 2;
 }
 
 void alertEarlyWarning(char * paramName, bool isOk, int languageNumber)
